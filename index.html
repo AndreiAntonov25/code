@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  body {
+    background: linear-gradient(160deg, #17212b, #232b38);
+    color: #fff; font-family: sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100vh; margin: 0;
+  }
+  h1 { font-size: 22px; margin-bottom: 10px; }
+  #wheel {
+    font-size: 90px; height: 110px; display: flex;
+    align-items: center; justify-content: center;
+    filter: drop-shadow(0 0 15px rgba(51,144,236,.5));
+  }
+  #result { margin-top: 15px; font-size: 22px; min-height: 30px; }
+  button {
+    margin-top: 25px; padding: 16px 45px; font-size: 20px;
+    border: none; border-radius: 14px; background: #3390ec; color: #fff;
+    cursor: pointer; box-shadow: 0 4px 15px rgba(51,144,236,.4);
+  }
+  button:disabled { background: #555; box-shadow: none; }
+  #stats { margin-top: 20px; font-size: 15px; opacity: .8; }
+  .prize { animation: pop .3s; }
+  @keyframes pop {
+    0% { transform: scale(.5); } 70% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+  <h1>🎲 Крутка удачи</h1>
+  <div id="wheel">🎁</div>
+  <div id="result"></div>
+  <button id="spin" onclick="spin()">КРУТИТЬ</button>
+  <div id="stats"></div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand();
+  tg.setHeaderColor("#17212b");
+
+  const prizes = ["🪨","🪨","💚","💚","💎","💎","⚔️"];
+  const names  = {"🪨":"Камень","💚":"Железо","💎":"Алмаз","⚔️":"ЛЕГЕНДАРКА!"};
+  const counts = {};
+  let spinning = false;
+
+  function spin() {
+    if (spinning) return;
+    spinning = true;
+    const btn = document.getElementById("spin");
+    btn.disabled = true;
+    const wheel = document.getElementById("wheel");
+    const result = document.getElementById("result");
+    result.textContent = "";
+    let ticks = 0;
+
+    const timer = setInterval(() => {
+      wheel.textContent = prizes[Math.floor(Math.random() * prizes.length)];
+      ticks++;
+      if (ticks > 22) {
+        clearInterval(timer);
+        const prize = prizes[Math.floor(Math.random() * prizes.length)];
+        wheel.innerHTML = '<span class="prize">' + prize + '</span>';
+        result.textContent = "Выпало: " + (names[prize] || prize);
+
+        counts[prize] = (counts[prize] || 0) + 1;
+        let s = "";
+        for (const k in counts) s += k + " × " + counts[k] + "   ";
+        document.getElementById("stats").textContent = s;
+
+        tg.sendData(JSON.stringify({ action: "roll", prize: prize }));
+        btn.disabled = false;
+        spinning = false;
+      }
+    }, 90);
+  }
+</script>
+</body>
+</html>
